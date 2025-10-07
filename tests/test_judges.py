@@ -367,7 +367,7 @@ class TestResponsesLLM:
 
     def test_extract_metrics_default(self):
         """Test default extract_metrics implementation."""
-        judge = ResponsesLLM()
+        judge = ResponsesLLM(api_key="test-key")
 
         mock_response = MockResponseModel(
             score=0.7, confidence=0.8, annotation="Test annotation"
@@ -486,7 +486,7 @@ class TestCustomJudgeImplementation:
         )
 
         # Verify default extract_metrics was generated
-        judge = TestAutoDiscoveryJudge()
+        judge = TestAutoDiscoveryJudge(api_key="test-key")
         mock_response = TestAutoDiscoveryJudge.OutputFormat(
             test_field="hello", number_field=42
         )
