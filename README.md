@@ -66,30 +66,50 @@ if __name__ == "__main__":
 
 ### CSV Column Mapping
 
-The CSVSource supports optional column mapping to select and rename columns:
+The CSVSource supports optional column mapping to select and rename columns. This is especially useful when working with existing CSV files that don't match your expected format.
+
+**Example CSV file (`feedback.csv`):**
+```csv
+ticket_id,customer_message,support_response,created_at,resolved,internal_notes
+T-1001,How do I reset my password?,Please visit account settings...,2024-01-15,true,Customer contacted twice
+T-1002,Product not working,We'll investigate this issue...,2024-01-16,false,Escalated to engineering
+```
+
+**Using column mapping to extract only what you need:**
 
 ```python
-# Example: Map CSV columns to required format
+# Map CSV columns to your evaluation format
 source = CSVSource(
-    "data.csv",
+    "feedback.csv",
     column_mapping={
-        "item_id": "id",              # Map item_id column to required 'id' key
-        "content": "instruction",      # Map content column to 'instruction' 
-        "author": "metadata_author",   # Include author as metadata
-        "timestamp": "created_at"      # Include timestamp with clearer name
-        # Other CSV columns will be ignored
+        "ticket_id": "id",                    # Required: map to 'id' field
+        "customer_message": "question",       # Rename for clarity
+        "support_response": "answer",         # Rename for clarity
+        "created_at": "timestamp",            # Include metadata
+        # resolved and internal_notes columns are ignored
     }
 )
 
-# Without mapping - all columns are included as-is
-source = CSVSource("data.csv")  # Expects 'id' column to exist
+# Result: Each row becomes:
+# {
+#     "id": "T-1001",
+#     "question": "How do I reset my password?",
+#     "answer": "Please visit account settings...",
+#     "timestamp": "2024-01-15"
+# }
 ```
 
-This feature allows you to:
-- Select only specific columns from large CSV files
-- Rename columns to match your expected format
-- Filter out unnecessary data
-- Map existing column names to the required 'id' field
+**Without mapping (requires 'id' column to exist):**
+```python
+source = CSVSource("data.csv")  # All columns included as-is
+```
+
+**Benefits:**
+- **Select specific columns** from large CSV files with many fields
+- **Rename columns** to match your evaluation format
+- **Filter out sensitive data** like internal notes or PII
+- **Map existing identifiers** to the required 'id' field
+- **Clean up data** by excluding irrelevant columns
 
 ### Adding New Sources
 
