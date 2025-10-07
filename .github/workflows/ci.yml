@@ -25,10 +25,10 @@ jobs:
       run: uv sync --dev
     
     - name: Run ruff format check
-      run: uv run ruff format --check src/ tests/ judge.py
-    
+      run: uv run ruff format --check src/ tests/
+
     - name: Run ruff lint
-      run: uv run ruff check src/ tests/ judge.py
+      run: uv run ruff check src/ tests/
 
   test:
     name: Test
