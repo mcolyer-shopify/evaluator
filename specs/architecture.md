@@ -60,7 +60,7 @@ src/evaluator/
 - `openai>=1.0.0` - LLM integration
 - `pandas>=2.0.0` - CSV handling
 - `pyyaml>=6.0` - YAML support
-- `aiofiles>=23.0.0` - Async file operations
+- `tqdm>=4.60.0` - Progress bars
 
 ### Judge Class Hierarchy
 ```python
