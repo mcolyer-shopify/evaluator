@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-07
+
+### Fixed
+- Updated pyproject.toml to use `dependency-groups.dev` instead of deprecated `tool.uv.dev-dependencies`
+- Removed non-existent judge.py from CI workflow ruff commands
+
+## [0.1.0] - 2025-10-06
+
 ### Added
 - Initial LLM Evaluator Framework implementation
 - Async-first framework with DuckDB storage
