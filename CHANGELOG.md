@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-10-07
+
+### Changed
+- Enhanced CSV column mapping documentation with practical example
+
+### Fixed
+- Removed unused aiofiles dependency
+- Fixed CI test failures by adding API key to judge instantiation
+
 ## [0.2.0] - 2025-10-07
 
 ### Fixed
