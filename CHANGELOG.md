@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-10-08
+
 ### Added
 - Hidden signals modal in results viewer (press `` ` `` key)
   - Display performance metrics (.meta.* fields) for tokens and latency
