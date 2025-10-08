@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluator Results Viewer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+        
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .upload-section {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+        
+        .upload-box {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            transition: border-color 0.3s ease;
+        }
+        
+        .upload-box:hover {
+            border-color: #3498db;
+        }
+        
+        .upload-box.dragover {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .upload-btn:hover {
+            background: #2980b9;
+        }
+        
+        .viewer-container {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .viewer-container.show {
+            display: flex;
+        }
+        
+        .filters-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 150px;
+        }
+        
+        .filter-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #34495e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-control {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .filter-select, .filter-input {
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            background: white;
+        }
+        
+        .filter-select {
+            min-width: 100px;
+        }
+        
+        .filter-input {
+            width: 80px;
+        }
+        
+        .filter-operator {
+            padding: 5px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            background: white;
+        }
+        
+        .clear-filters-btn {
+            background: #95a5a6;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .clear-filters-btn:hover {
+            background: #7f8c8d;
+        }
+        
+        .filtered-count {
+            color: #e67e22;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .viewer-content {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            padding-bottom: 80px; /* Space for fixed navigation */
+        }
+        
+        .left-pane {
+            width: 40%;
+            padding: 20px;
+            border-right: 1px solid #eee;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 100%;
+        }
+        
+        .right-pane {
+            width: 60%;
+            padding: 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 100%;
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background: #f9f9f9;
+            flex-shrink: 0;
+        }
+        
+        .navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-top: 1px solid #eee;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .nav-btn {
+            background: #34495e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .nav-btn:hover:not(:disabled) {
+            background: #2c3e50;
+        }
+        
+        .nav-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .clear-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: auto;
+        }
+        
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+
+        .dataset-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+            margin-right: 15px;
+        }
+
+        .dataset-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #34495e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dataset-dropdown {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+            min-width: 200px;
+        }
+
+        .dataset-dropdown:hover {
+            border-color: #3498db;
+        }
+
+        .add-dataset-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .add-dataset-btn:hover {
+            background: #229954;
+        }
+
+        .row-counter {
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0 20px;
+        }
+        
+        .field-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .field-label {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .field-value {
+            color: #34495e;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .input-pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #e1e8ed;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 0;
+        }
+        
+        .signal-block {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #e1e8ed;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .signal-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #3498db;
+        }
+        
+        .signal-score {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e8f4fd;
+            border-radius: 6px;
+            text-align: center;
+        }
+        
+        .signal-annotation {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #e67e22;
+            color: #5d4e37;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        
+        /* Toast container */
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 10px;
+            pointer-events: none;
+        }
+        
+        .toast {
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+            animation: slideIn 0.3s ease-out;
+            pointer-events: auto;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        
+        .toast.error {
+            background: #e74c3c;
+        }
+        
+        .toast.info {
+            background: #3498db;
+        }
+        
+        .toast.success {
+            background: #27ae60;
+        }
+        
+        .toast.hiding {
+            animation: slideOut 0.3s ease-in forwards;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .toast-close {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 20px;
+            line-height: 1;
+            padding: 0;
+            margin: 0;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .toast-close:hover {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+    <div class="container">
+        <div class="upload-section" style="display: none;">
+            <!-- Upload section hidden - datasets loaded from server -->
+        </div>
+        
+        <div class="viewer-container" id="viewerContainer">
+            <div class="top-bar">
+                <div class="filters-section" id="filtersSection"></div>
+                <div class="dataset-selector" id="datasetSelector">
+                    <span class="dataset-label">Dataset:</span>
+                    <select class="dataset-dropdown" id="datasetDropdown">
+                        <option value="">Select dataset...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="viewer-content">
+                <div class="left-pane" id="leftPane">
+                    <div class="loading">Loading...</div>
+                </div>
+                <div class="right-pane" id="rightPane">
+                    <div class="loading">Loading...</div>
+                </div>
+            </div>
+            
+            <div class="navigation">
+                <button class="nav-btn" id="prevBtn">← Previous</button>
+                <span class="row-counter" id="rowCounter">Row 1 of 0</span>
+                <span class="filtered-count" id="filteredCount" style="display: none;"></span>
+                <button class="nav-btn" id="nextBtn">Next →</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "apache-arrow": "https://cdn.skypack.dev/apache-arrow@17.0.0"
+      }
+    }
+    </script>
+    <script type="module">
+        import * as duckdb from '/static/lib/duckdb-browser.mjs';
+        
+        let db = null;
+        let currentRowIndex = 0;
+        let totalRows = 0;
+        let tableColumns = [];
+        let currentData = [];
+        let filteredData = [];
+        let activeFilters = {};
+        let currentFileName = null;
+        let currentDataset = null;
+        let availableDatasets = [];
+
+        async function initDuckDB() {
+            try {
+                const bundle = await duckdb.selectBundle({
+                    mvp: {
+                        mainModule: '/static/lib/duckdb-mvp.wasm',
+                        mainWorker: '/static/lib/duckdb-browser-mvp.worker.js',
+                    },
+                    eh: {
+                        mainModule: '/static/lib/duckdb-eh.wasm',
+                        mainWorker: '/static/lib/duckdb-browser-eh.worker.js',
+                    },
+                });
+
+                const worker = new Worker(bundle.mainWorker);
+                const logger = new duckdb.ConsoleLogger();
+                db = new duckdb.AsyncDuckDB(logger, worker);
+                await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+                console.log('DuckDB initialized successfully');
+
+                // Fetch available datasets from server
+                await fetchAvailableDatasets();
+
+                // Get dataset from URL if present, otherwise load most recent
+                const datasetFromURL = getDatasetFromURL();
+                if (datasetFromURL && availableDatasets.find(d => d.name === datasetFromURL)) {
+                    currentDataset = datasetFromURL;
+                    console.log(`Using dataset from URL: ${currentDataset}`);
+                    await loadDatasetFromServer(currentDataset);
+                } else if (availableDatasets.length > 0) {
+                    // Auto-load most recent dataset (already sorted by mtime desc)
+                    currentDataset = availableDatasets[0].name;
+                    console.log(`Auto-loading most recent dataset: ${currentDataset}`);
+                    await loadDatasetFromServer(currentDataset);
+                } else {
+                    showInfo('No datasets found in results directory');
+                }
+            } catch (error) {
+                console.error('Failed to initialize DuckDB:', error);
+                showError('Failed to initialize database engine');
+            }
+        }
+
+        async function fetchAvailableDatasets() {
+            try {
+                const response = await fetch('/api/datasets');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                availableDatasets = await response.json();
+                console.log(`Found ${availableDatasets.length} datasets:`, availableDatasets);
+
+                // Populate the dropdown
+                populateDatasetDropdown();
+            } catch (error) {
+                console.error('Failed to fetch datasets:', error);
+                showError('Failed to fetch datasets from server');
+                availableDatasets = [];
+            }
+        }
+
+        async function loadDatasetFromServer(datasetName) {
+            try {
+                showInfo(`Loading ${datasetName}...`);
+                const response = await fetch(`/results/${datasetName}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const arrayBuffer = await response.arrayBuffer();
+                const uint8Array = new Uint8Array(arrayBuffer);
+
+                currentFileName = datasetName;
+                currentDataset = datasetName;
+                setDatasetInURL(datasetName);
+
+                await processFile(uint8Array, datasetName);
+            } catch (error) {
+                console.error(`Failed to load dataset ${datasetName}:`, error);
+                showError(`Failed to load dataset: ${error.message}`);
+            }
+        }
+
+        function createToast(message, type = 'info', duration = 5000) {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = `toast-${Date.now()}`;
+            
+            const toastHTML = `
+                <div id="${toastId}" class="toast ${type}">
+                    <span>${message}</span>
+                    <button class="toast-close" onclick="removeToast('${toastId}')">&times;</button>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+            const toastElement = document.getElementById(toastId);
+            
+            // Auto-remove after duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    removeToast(toastId);
+                }, duration);
+            }
+            
+            return toastId;
+        }
+        
+        function removeToast(toastId) {
+            const toast = document.getElementById(toastId);
+            if (toast && !toast.classList.contains('hiding')) {
+                toast.classList.add('hiding');
+                setTimeout(() => {
+                    toast?.remove();
+                }, 300); // Wait for animation to complete
+            }
+        }
+        
+        // Make removeToast globally accessible for onclick handlers
+        window.removeToast = removeToast;
+
+        function showError(message, duration = 5000) {
+            return createToast(message, 'error', duration);
+        }
+
+        function showInfo(message, duration = 3000) {
+            return createToast(message, 'info', duration);
+        }
+        
+        function showSuccess(message, duration = 3000) {
+            return createToast(message, 'success', duration);
+        }
+
+        function populateDatasetDropdown() {
+            const dropdown = document.getElementById('datasetDropdown');
+
+            dropdown.innerHTML = '<option value="">Select dataset...</option>';
+
+            availableDatasets.forEach(dataset => {
+                const option = document.createElement('option');
+                option.value = dataset.name;
+                const sizeStr = dataset.size ? ` (${(dataset.size / 1024 / 1024).toFixed(1)} MB)` : '';
+                const timeAgo = dataset.mtime ? getTimeAgo(dataset.mtime) : '';
+                option.textContent = `${dataset.name}${sizeStr}${timeAgo ? ' - ' + timeAgo : ''}`;
+                if (dataset.name === currentDataset) {
+                    option.selected = true;
+                }
+                dropdown.appendChild(option);
+            });
+
+            // Always show the selector
+            document.getElementById('datasetSelector').style.display = 'flex';
+        }
+
+        function getTimeAgo(timestamp) {
+            const now = Date.now();
+            const diff = now - (timestamp * 1000); // Convert from seconds to milliseconds
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            if (days > 0) return `${days}d ago`;
+            if (hours > 0) return `${hours}h ago`;
+            if (minutes > 0) return `${minutes}m ago`;
+            return 'just now';
+        }
+
+        async function switchDataset(datasetName) {
+            if (datasetName === currentDataset) return;
+            if (!datasetName) return;
+
+            // Load the new dataset
+            await loadDatasetFromServer(datasetName);
+        }
+
+        // URL state management
+        function updateURLState(conversationId) {
+            if (conversationId !== null && conversationId !== undefined) {
+                const url = new URL(window.location);
+                url.searchParams.set('id', conversationId);
+                if (currentDataset) {
+                    url.searchParams.set('dataset', currentDataset);
+                }
+                window.history.replaceState({ id: conversationId, dataset: currentDataset }, '', url);
+            }
+        }
+
+        function getConversationIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        function getDatasetFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('dataset');
+        }
+
+        function setDatasetInURL(dataset) {
+            if (dataset) {
+                const url = new URL(window.location);
+                url.searchParams.set('dataset', dataset);
+                window.history.replaceState({ dataset: dataset }, '', url);
+                currentDataset = dataset;
+            }
+        }
+
+        function findRowIndexById(id) {
+            if (!currentData || !id) return -1;
+            return currentData.findIndex(row => String(row.id) === String(id));
+        }
+
+        async function processFile(uint8Array, fileName) {
+            try {
+                showInfo('Processing file...');
+                
+                // Close any existing connections first
+                try {
+                    const oldConn = await db.connect();
+                    await oldConn.close();
+                } catch (e) {
+                    // Ignore if no connection exists
+                }
+                
+                // Register the database file with DuckDB WASM
+                const dbFileName = 'uploaded_db.duckdb';
+                await db.registerFileBuffer(dbFileName, uint8Array);
+                
+                let conn;
+                try {
+                    // Try to open the database file directly
+                    await db.open({
+                        path: dbFileName
+                    });
+                    
+                    // Create a connection to the opened database
+                    conn = await db.connect();
+                } catch (openError) {
+                    console.log('db.open() failed, trying ATTACH approach:', openError);
+                    
+                    // If open fails, try the ATTACH approach as fallback
+                    conn = await db.connect();
+                    
+                    try {
+                        await conn.query(`ATTACH DATABASE '${dbFileName}' AS data_db (READ_ONLY)`);
+                    } catch (attachError) {
+                        console.error('Both open and attach failed:', attachError);
+                        throw new Error('Failed to open database file. The file may be corrupted or not a valid DuckDB database.');
+                    }
+                }
+                
+                // Look for tables in the database
+                let tables;
+                let isAttached = false;
+                
+                try {
+                    // First try to find tables in the attached database
+                    const attachedResult = await conn.query(`
+                        SELECT DISTINCT table_name 
+                        FROM information_schema.tables 
+                        WHERE table_catalog = 'data_db' AND table_type = 'BASE TABLE'
+                    `);
+                    tables = attachedResult.toArray();
+                    if (tables.length > 0) {
+                        isAttached = true;
+                    }
+                } catch (e) {
+                    // Ignore error and try main database
+                }
+                
+                if (!tables || tables.length === 0) {
+                    // Try main database
+                    const mainResult = await conn.query(`
+                        SELECT DISTINCT table_name 
+                        FROM information_schema.tables 
+                        WHERE table_type = 'BASE TABLE'
+                    `);
+                    tables = mainResult.toArray();
+                }
+                
+                console.log('Found tables:', tables.map(t => t.table_name), 'isAttached:', isAttached);
+                
+                if (tables.length === 0) {
+                    throw new Error('No tables found in DuckDB file');
+                }
+                
+                // Look for "evaluations" table first, then fall back to the first table
+                let targetTable = tables.find(t => t.table_name.toLowerCase() === 'evaluations');
+                if (!targetTable) {
+                    targetTable = tables[0];
+                }
+                
+                const tableName = isAttached ? `data_db.${targetTable.table_name}` : targetTable.table_name;
+                console.log('Using table:', tableName);
+                
+                // Get column information
+                const columnsResult = await conn.query(`
+                    DESCRIBE SELECT * FROM ${tableName} LIMIT 0
+                `);
+                
+                tableColumns = columnsResult.toArray().map(row => ({
+                    name: row.column_name,
+                    type: row.column_type
+                }));
+                
+                console.log('Detected columns:', tableColumns);
+                
+                // Get total row count
+                const countResult = await conn.query(`SELECT COUNT(*) as count FROM ${tableName}`);
+                const countRow = countResult.toArray()[0];
+                totalRows = typeof countRow.count === 'bigint' ? Number(countRow.count) : countRow.count;
+                
+                // Load all data
+                const dataResult = await conn.query(`SELECT * FROM ${tableName}`);
+                currentData = dataResult.toArray().map(row => {
+                    // Convert BigInt values to regular numbers/strings
+                    const convertedRow = {};
+                    for (const [key, value] of Object.entries(row)) {
+                        if (typeof value === 'bigint') {
+                            convertedRow[key] = Number(value);
+                        } else {
+                            convertedRow[key] = value;
+                        }
+                    }
+                    return convertedRow;
+                });
+                
+                // Initialize filtered data
+                filteredData = [...currentData];
+                
+                await conn.close();
+                
+                // Toasts will auto-remove, no need to manually clear them
+                
+                // Hide the upload section
+                document.querySelector('.upload-section').style.display = 'none';
+                
+                document.getElementById('viewerContainer').classList.add('show');
+                
+                // Try to restore position from URL
+                const urlId = getConversationIdFromURL();
+                const urlIndex = findRowIndexById(urlId);
+                
+                if (urlIndex >= 0) {
+                    currentRowIndex = urlIndex;
+                    console.log(`Restored position to conversation ID: ${urlId} (row ${urlIndex + 1})`);
+                } else {
+                    currentRowIndex = 0;
+                }
+                
+                updateDisplay();
+                updateNavigation();
+                
+                // Generate filters after data is loaded
+                generateFilters();
+
+                showSuccess(`Loaded ${fileName}: ${totalRows} rows`);
+
+                // Update dataset dropdown to show current selection
+                populateDatasetDropdown();
+                
+            } catch (error) {
+                console.error('Error processing file:', error);
+                showError(`Error processing file: ${error.message}`);
+            }
+        }
+
+        function generateFilters() {
+            const filtersSection = document.getElementById('filtersSection');
+            filtersSection.innerHTML = '';
+            
+            // Get signal columns (excluding meta fields, annotations, and error fields)
+            const signalColumns = tableColumns.filter(col => 
+                !['id', 'input'].includes(col.name.toLowerCase()) && 
+                !col.name.includes('.meta.') &&
+                !col.name.includes('.annotation') &&
+                !col.name.includes('.error')
+            );
+            
+            signalColumns.forEach(col => {
+                // Analyze the data type by looking at sample values
+                const sampleValues = currentData.slice(0, 100).map(row => row[col.name]).filter(v => v !== null && v !== undefined);
+                const isBinary = sampleValues.every(v => v === 'true' || v === 'false' || v === true || v === false);
+                const isNumeric = sampleValues.every(v => !isNaN(Number(v)));
+                
+                const filterGroup = document.createElement('div');
+                filterGroup.className = 'filter-group';
+                filterGroup.dataset.column = col.name;
+                
+                const label = document.createElement('div');
+                label.className = 'filter-label';
+                // Format label: replace last dot with colon, underscores with spaces
+                const parts = col.name.split('.');
+                let labelText;
+                if (parts.length > 1) {
+                    // For dotted names like "judge_mock_detector.confidence"
+                    const prefix = parts.slice(0, -1).join('.').replace(/_/g, ' ');
+                    const suffix = parts[parts.length - 1].replace(/_/g, ' ');
+                    labelText = `${prefix}: ${suffix}`;
+                } else {
+                    // For simple names, just replace underscores
+                    labelText = col.name.replace(/_/g, ' ');
+                }
+                label.textContent = labelText;
+                filterGroup.appendChild(label);
+                
+                const control = document.createElement('div');
+                control.className = 'filter-control';
+                
+                if (isBinary) {
+                    // Binary filter (true/false/all)
+                    const select = document.createElement('select');
+                    select.className = 'filter-select';
+                    select.dataset.column = col.name;
+                    select.dataset.type = 'binary';
+                    select.innerHTML = `
+                        <option value="">All</option>
+                        <option value="true">True</option>
+                        <option value="false">False</option>
+                    `;
+                    select.addEventListener('change', () => applyFilters());
+                    control.appendChild(select);
+                } else if (isNumeric) {
+                    // Numeric filter (gt/lt)
+                    const operator = document.createElement('select');
+                    operator.className = 'filter-operator';
+                    operator.dataset.column = col.name;
+                    operator.innerHTML = `
+                        <option value="">-</option>
+                        <option value="gt">></option>
+                        <option value="gte">≥</option>
+                        <option value="lt"><</option>
+                        <option value="lte">≤</option>
+                        <option value="eq">=</option>
+                    `;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.step = 'any';
+                    input.className = 'filter-input';
+                    input.dataset.column = col.name;
+                    input.dataset.type = 'numeric';
+                    input.placeholder = 'value';
+                    
+                    operator.addEventListener('change', () => applyFilters());
+                    input.addEventListener('input', () => applyFilters());
+                    
+                    control.appendChild(operator);
+                    control.appendChild(input);
+                } else {
+                    // Text filter
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'filter-input';
+                    input.dataset.column = col.name;
+                    input.dataset.type = 'text';
+                    input.placeholder = 'contains';
+                    input.style.width = '120px';
+                    input.addEventListener('input', () => applyFilters());
+                    control.appendChild(input);
+                }
+                
+                filterGroup.appendChild(control);
+                filtersSection.appendChild(filterGroup);
+            });
+            
+            // Add clear filters button
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'clear-filters-btn';
+            clearBtn.textContent = 'Clear Filters';
+            clearBtn.addEventListener('click', clearFilters);
+            filtersSection.appendChild(clearBtn);
+        }
+        
+        function applyFilters() {
+            activeFilters = {};
+            
+            // Collect all filter values
+            document.querySelectorAll('.filter-group').forEach(group => {
+                const column = group.dataset.column;
+                const binarySelect = group.querySelector('select[data-type="binary"]');
+                const numericInput = group.querySelector('input[data-type="numeric"]');
+                const textInput = group.querySelector('input[data-type="text"]');
+                const operator = group.querySelector('.filter-operator');
+                
+                if (binarySelect && binarySelect.value) {
+                    activeFilters[column] = { type: 'binary', value: binarySelect.value === 'true' };
+                } else if (numericInput && numericInput.value && operator && operator.value) {
+                    activeFilters[column] = { 
+                        type: 'numeric', 
+                        operator: operator.value, 
+                        value: parseFloat(numericInput.value) 
+                    };
+                } else if (textInput && textInput.value) {
+                    activeFilters[column] = { type: 'text', value: textInput.value.toLowerCase() };
+                }
+            });
+            
+            // Apply filters to data
+            if (Object.keys(activeFilters).length > 0) {
+                filteredData = currentData.filter(row => {
+                    for (const [column, filter] of Object.entries(activeFilters)) {
+                        const value = row[column];
+                        
+                        if (filter.type === 'binary') {
+                            const boolValue = value === 'true' || value === true;
+                            if (boolValue !== filter.value) return false;
+                        } else if (filter.type === 'numeric') {
+                            const numValue = parseFloat(value);
+                            if (isNaN(numValue)) return false;
+                            
+                            switch (filter.operator) {
+                                case 'gt': if (!(numValue > filter.value)) return false; break;
+                                case 'gte': if (!(numValue >= filter.value)) return false; break;
+                                case 'lt': if (!(numValue < filter.value)) return false; break;
+                                case 'lte': if (!(numValue <= filter.value)) return false; break;
+                                case 'eq': if (!(numValue === filter.value)) return false; break;
+                            }
+                        } else if (filter.type === 'text') {
+                            if (!String(value).toLowerCase().includes(filter.value)) return false;
+                        }
+                    }
+                    return true;
+                });
+                
+                // Update UI to show filtered count
+                document.getElementById('filteredCount').style.display = 'inline';
+                document.getElementById('filteredCount').textContent = 
+                    `Filtered: ${filteredData.length} of ${currentData.length}`;
+            } else {
+                filteredData = [...currentData];
+                document.getElementById('filteredCount').style.display = 'none';
+            }
+            
+            // Reset to first row and update display
+            currentRowIndex = 0;
+            updateDisplay();
+            updateNavigation();
+        }
+        
+        function clearFilters() {
+            // Clear all filter inputs
+            document.querySelectorAll('.filter-select, .filter-input, .filter-operator').forEach(el => {
+                el.value = '';
+            });
+            
+            activeFilters = {};
+            filteredData = [...currentData];
+            document.getElementById('filteredCount').style.display = 'none';
+            
+            currentRowIndex = 0;
+            updateDisplay();
+            updateNavigation();
+        }
+        
+        function updateDisplay() {
+            const dataToUse = filteredData.length > 0 ? filteredData : currentData;
+            if (!dataToUse || dataToUse.length === 0) return;
+            
+            const row = dataToUse[currentRowIndex];
+            const leftPane = document.getElementById('leftPane');
+            const rightPane = document.getElementById('rightPane');
+            
+            // Update URL with current conversation ID
+            if (row.id !== null && row.id !== undefined) {
+                updateURLState(row.id);
+            }
+            
+            // Helper function to escape HTML
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // Split columns into left and right pane columns
+            const leftPaneColumns = tableColumns.filter(col => 
+                ['id', 'input'].includes(col.name.toLowerCase())
+            );
+            
+            const rightPaneColumns = tableColumns.filter(col => 
+                !['id', 'input'].includes(col.name.toLowerCase()) && 
+                !col.name.includes('.meta.')
+            );
+            
+            // Left pane: ID and Input (if they exist)
+            let leftPaneContent = '';
+            leftPaneColumns.forEach(col => {
+                const value = row[col.name];
+                if (value !== null && value !== undefined) {
+                    const isInput = col.name.toLowerCase() === 'input';
+                    leftPaneContent += `
+                        <div class="field-group">
+                            <div class="field-label">${escapeHtml(String(col.name.toUpperCase()))}</div>
+                            ${isInput ? 
+                                `<pre class="field-value input-pre">${escapeHtml(String(value))}</pre>` :
+                                `<div class="field-value">${escapeHtml(String(value))}</div>`
+                            }
+                        </div>
+                    `;
+                }
+            });
+            
+            leftPane.innerHTML = leftPaneContent || '<div class="loading">No data found</div>';
+            
+            // Right pane: All other columns (excluding *.meta.* fields)
+            const signalColumns = rightPaneColumns;
+            
+            let rightPaneContent = '';
+            
+            // First, collect all annotation columns to avoid duplicate processing
+            const annotationColumns = new Set();
+            signalColumns.forEach(col => {
+                if (col.name.includes('.annotation')) {
+                    annotationColumns.add(col.name);
+                }
+            });
+            
+            signalColumns.forEach(col => {
+                const value = row[col.name];
+                if (value === null || value === undefined) return;
+                
+                // Check if this is an annotation column
+                const isAnnotation = col.name.includes('.annotation');
+                
+                if (isAnnotation) {
+                    // Handle annotation columns directly
+                    rightPaneContent += `
+                        <div class="signal-block">
+                            <div class="signal-name">${escapeHtml(String(col.name))}</div>
+                            <div class="signal-annotation">
+                                ${escapeHtml(String(value))}
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Look for corresponding annotation for this signal
+                let annotation = null;
+                let annotationKey = null;
+                
+                // Try different annotation patterns for this signal
+                const possibleAnnotationKeys = [
+                    `${col.name}.annotation`,           // exact.annotation
+                    `${col.name}_annotation`,           // exact_annotation
+                    `${col.name}.signal.annotation`,    // exact.signal.annotation
+                    `${col.name}_signal_annotation`     // exact_signal_annotation
+                ];
+                
+                // Find the first matching annotation
+                for (const key of possibleAnnotationKeys) {
+                    if (key in row && row[key] !== null && row[key] !== undefined) {
+                        annotation = row[key];
+                        annotationKey = key;
+                        break;
+                    }
+                }
+                
+                rightPaneContent += `
+                    <div class="signal-block">
+                        <div class="signal-name">${escapeHtml(String(col.name))}</div>
+                        <div class="signal-score">${escapeHtml(String(value))}</div>
+                        ${annotation ? `
+                            <div class="signal-annotation">
+                                <strong>Annotation:</strong><br>
+                                ${escapeHtml(String(annotation))}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            rightPane.innerHTML = rightPaneContent || '<div class="loading">No signal data found</div>';
+        }
+
+        function updateNavigation() {
+            const dataToUse = filteredData.length > 0 ? filteredData : currentData;
+            const totalDisplayed = dataToUse.length;
+            document.getElementById('rowCounter').textContent = `Row ${currentRowIndex + 1} of ${totalDisplayed}`;
+            document.getElementById('prevBtn').disabled = currentRowIndex === 0;
+            document.getElementById('nextBtn').disabled = currentRowIndex === totalDisplayed - 1;
+        }
+
+        function navigatePrevious() {
+            if (currentRowIndex > 0) {
+                currentRowIndex--;
+                updateDisplay();
+                updateNavigation();
+            }
+        }
+
+        function navigateNext() {
+            const dataToUse = filteredData.length > 0 ? filteredData : currentData;
+            if (currentRowIndex < dataToUse.length - 1) {
+                currentRowIndex++;
+                updateDisplay();
+                updateNavigation();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('prevBtn').addEventListener('click', navigatePrevious);
+        document.getElementById('nextBtn').addEventListener('click', navigateNext);
+        document.getElementById('datasetDropdown').addEventListener('change', function(e) {
+            const selectedDataset = e.target.value;
+            if (selectedDataset) {
+                switchDataset(selectedDataset);
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (document.getElementById('viewerContainer').classList.contains('show')) {
+                if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    navigatePrevious();
+                } else if (e.key === 'ArrowRight') {
+                    e.preventDefault();
+                    navigateNext();
+                }
+            }
+        });
+
+        // Handle browser back/forward navigation
+        window.addEventListener('popstate', function(e) {
+            if (currentData && currentData.length > 0) {
+                const urlId = getConversationIdFromURL();
+                const urlIndex = findRowIndexById(urlId);
+                if (urlIndex >= 0 && urlIndex !== currentRowIndex) {
+                    currentRowIndex = urlIndex;
+                    updateDisplay();
+                    updateNavigation();
+                }
+            }
+        });
+        
+        // Initialize DuckDB when page loads
+        initDuckDB();
+    </script>
+</body>
+</html>
