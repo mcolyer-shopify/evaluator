@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-08
+
+### Added
+- Web-based results viewer with `evaluator viewer` CLI command
+- Interactive navigation and filtering of evaluation results
+- Auto-loading of most recent dataset from results directory
+- Dataset switching for comparing multiple evaluations
+- Automatic port conflict handling
+
 ## [0.2.1] - 2025-10-07
 
 ### Changed
