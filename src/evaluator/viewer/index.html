@@ -454,10 +454,211 @@
         .toast-close:hover {
             opacity: 1;
         }
+
+        /* Hidden Signals Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 2000;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 2px solid #e1e8ed;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+
+        .modal-close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 0;
+            overflow: hidden;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-table-wrapper {
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .hidden-signals-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .hidden-signals-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #f8f9fa;
+        }
+
+        .hidden-signals-table th {
+            text-align: left;
+            padding: 16px 24px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: #2c3e50;
+            border-bottom: 2px solid #e1e8ed;
+        }
+
+        .hidden-signals-table td {
+            padding: 14px 24px;
+            border-bottom: 1px solid #e1e8ed;
+            font-size: 14px;
+        }
+
+        .hidden-signals-table tbody tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .hidden-signals-table tbody tr:hover {
+            background: #e8f4fd;
+        }
+
+        .hidden-signals-table td:first-child {
+            font-weight: 600;
+            color: #34495e;
+            width: 60%;
+        }
+
+        .hidden-signals-table td:last-child {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            color: #7f8c8d;
+            text-align: right;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e1e8ed;
+            background: #f8f9fa;
+            text-align: center;
+            font-size: 12px;
+            color: #7f8c8d;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .modal-footer kbd {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: monospace;
+            font-size: 11px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
     <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Hidden Signals Modal -->
+    <div class="modal-overlay" id="hiddenSignalsModal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h2 class="modal-title">Hidden Signals (Performance Metrics)</h2>
+                <button class="modal-close-btn" id="modalCloseBtn" title="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-table-wrapper">
+                    <table class="hidden-signals-table">
+                        <thead>
+                            <tr>
+                                <th>Signal Name</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hiddenSignalsTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                Press <kbd>`</kbd> or <kbd>ESC</kbd> to close
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="upload-section" style="display: none;">
             <!-- Upload section hidden - datasets loaded from server -->
@@ -1054,16 +1255,117 @@
             document.querySelectorAll('.filter-select, .filter-input, .filter-operator').forEach(el => {
                 el.value = '';
             });
-            
+
             activeFilters = {};
             filteredData = [...currentData];
             document.getElementById('filteredCount').style.display = 'none';
-            
+
             currentRowIndex = 0;
             updateDisplay();
             updateNavigation();
         }
-        
+
+        // Hidden Signals Modal Functions
+        function collectHiddenSignals() {
+            const dataToUse = filteredData.length > 0 ? filteredData : currentData;
+            if (!dataToUse || dataToUse.length === 0) return [];
+
+            const row = dataToUse[currentRowIndex];
+            const hiddenSignals = [];
+
+            // Collect all .meta.* columns
+            tableColumns.forEach(col => {
+                if (col.name.includes('.meta.')) {
+                    const value = row[col.name];
+                    if (value !== null && value !== undefined) {
+                        hiddenSignals.push({
+                            name: col.name,
+                            value: value
+                        });
+                    }
+                }
+            });
+
+            // Sort by name for consistent display
+            hiddenSignals.sort((a, b) => a.name.localeCompare(b.name));
+
+            return hiddenSignals;
+        }
+
+        function formatSignalName(name) {
+            // Remove "judge_" prefix
+            let formatted = name.replace(/^judge_/, '');
+
+            // Replace .meta. with " → "
+            formatted = formatted.replace('.meta.', ' → ');
+
+            // Replace underscores with spaces
+            formatted = formatted.replace(/_/g, ' ');
+
+            // Capitalize first letter of each word
+            formatted = formatted.split(' ').map(word =>
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+
+            return formatted;
+        }
+
+        function formatSignalValue(value, name) {
+            // Check if this is a token or latency metric
+            if (name.includes('tokens')) {
+                // Format as integer with commas
+                return Number(value).toLocaleString('en-US', {
+                    maximumFractionDigits: 0
+                });
+            } else if (name.includes('latency')) {
+                // Format latency with 2 decimal places and ms suffix
+                return Number(value).toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }) + ' ms';
+            } else {
+                // Default: format as number with up to 4 decimal places
+                if (typeof value === 'number') {
+                    return Number(value).toLocaleString('en-US', {
+                        maximumFractionDigits: 4
+                    });
+                }
+                return String(value);
+            }
+        }
+
+        function toggleHiddenSignalsModal() {
+            const modal = document.getElementById('hiddenSignalsModal');
+            const isCurrentlyShown = modal.classList.contains('show');
+
+            if (isCurrentlyShown) {
+                // Hide modal
+                modal.classList.remove('show');
+            } else {
+                // Show modal and populate with data
+                const hiddenSignals = collectHiddenSignals();
+                const tbody = document.getElementById('hiddenSignalsTableBody');
+
+                if (hiddenSignals.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align: center; color: #7f8c8d; padding: 40px;">No hidden signals found for this row</td></tr>';
+                } else {
+                    tbody.innerHTML = hiddenSignals.map(signal => `
+                        <tr>
+                            <td>${formatSignalName(signal.name)}</td>
+                            <td>${formatSignalValue(signal.value, signal.name)}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                modal.classList.add('show');
+            }
+        }
+
+        function closeHiddenSignalsModal() {
+            const modal = document.getElementById('hiddenSignalsModal');
+            modal.classList.remove('show');
+        }
+
         function updateDisplay() {
             const dataToUse = filteredData.length > 0 ? filteredData : currentData;
             if (!dataToUse || dataToUse.length === 0) return;
@@ -1220,9 +1522,39 @@
             }
         });
 
+        // Hidden signals modal event listeners
+        document.getElementById('modalCloseBtn').addEventListener('click', closeHiddenSignalsModal);
+
+        // Click outside modal to close
+        document.getElementById('hiddenSignalsModal').addEventListener('click', function(e) {
+            if (e.target.id === 'hiddenSignalsModal') {
+                closeHiddenSignalsModal();
+            }
+        });
+
         // Keyboard navigation
         document.addEventListener('keydown', function(e) {
-            if (document.getElementById('viewerContainer').classList.contains('show')) {
+            const modal = document.getElementById('hiddenSignalsModal');
+            const isModalOpen = modal.classList.contains('show');
+
+            // Handle backtick key to toggle modal
+            if (e.key === '`' || e.key === '~') {
+                e.preventDefault();
+                if (document.getElementById('viewerContainer').classList.contains('show')) {
+                    toggleHiddenSignalsModal();
+                }
+                return;
+            }
+
+            // Handle ESC key to close modal
+            if (e.key === 'Escape' && isModalOpen) {
+                e.preventDefault();
+                closeHiddenSignalsModal();
+                return;
+            }
+
+            // Handle arrow keys for navigation (only when modal is not open)
+            if (document.getElementById('viewerContainer').classList.contains('show') && !isModalOpen) {
                 if (e.key === 'ArrowLeft') {
                     e.preventDefault();
                     navigatePrevious();
